@@ -29,6 +29,15 @@
         .no-scroll-touch {
             touch-action: none;
         }
+        /* Text nicht markierbar */
+        body, #root, #root * {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
+        }
         
         .file-input-hidden {
             opacity: 0;
@@ -83,6 +92,7 @@
             const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
             const [showNameVideoPopup, setShowNameVideoPopup] = useState(false);
             const [showControls, setShowControls] = useState(true);
+            const [isFullscreen, setIsFullscreen] = useState(false);
             const [isMuted, setIsMuted] = useState(false);
             const [playbackRate, setPlaybackRate] = useState(1);
             const [isDragging, setIsDragging] = useState(false);
@@ -101,6 +111,20 @@
             useEffect(() => {
                 stateRef.current = { loopStart, loopEnd, duration };
             }, [loopStart, loopEnd, duration]);
+
+            useEffect(() => {
+                const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+                document.addEventListener('fullscreenchange', onFullscreenChange);
+                return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+            }, []);
+
+            const toggleFullscreen = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen?.();
+                } else {
+                    document.exitFullscreen?.();
+                }
+            };
 
             useEffect(() => {
                 const v = videoRef.current;
@@ -332,19 +356,20 @@
                         <div className="absolute top-0 left-0 right-0 z-20 pl-3 pr-3 pt-2 pb-2 bg-gradient-to-b from-black/70 to-transparent flex items-center gap-2 min-h-[44px]">
                             <label className="flex items-center gap-2 cursor-pointer text-white/90 text-sm min-h-[36px] shrink-0">
                                 <i className="fas fa-folder-open text-white/80"></i>
+                                {localFileUrl ? null : <span className="text-white/70">Video laden</span>}
                                 <input type="file" accept="video/*,audio/*" onChange={handleFileUpload} className="file-input-hidden" />
                             </label>
                             {localFileUrl ? (
                                 <span className="flex-1 min-w-0 truncate text-sm text-white/90">{videoTitle}</span>
-                            ) : (
-                                <span className="text-sm text-white/70">Video laden</span>
-                            )}
-                            <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0 ml-auto" title={isMuted ? "Ton an" : "Stumm"}><i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-sm`}></i></button>
+                            ) : null}
+                            <button onClick={toggleFullscreen} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0 ml-auto" title={isFullscreen ? "Vollbild beenden" : "Vollbild"}><i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i></button>
+                            <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0" title={isMuted ? "Ton an" : "Stumm"}><i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-sm`}></i></button>
                             <button onClick={() => setShowControls(false)} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0" title="Menü ausblenden"><i className="fas fa-chevron-down text-sm"></i></button>
                         </div>
                     )}
                     {!showControls && (
                         <div className="absolute top-2 right-3 z-20 flex items-center gap-2">
+                            <button onClick={toggleFullscreen} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0" title={isFullscreen ? "Vollbild beenden" : "Vollbild"}><i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i></button>
                             <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0" title={isMuted ? "Ton an" : "Stumm"}><i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-sm`}></i></button>
                             <button onClick={() => setShowControls(true)} className="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shrink-0" title="Menü einblenden"><i className="fas fa-chevron-up text-sm"></i></button>
                         </div>
